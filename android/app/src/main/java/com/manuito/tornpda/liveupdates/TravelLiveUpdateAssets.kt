@@ -4,9 +4,13 @@ import com.manuito.tornpda.R
 
 object TravelLiveUpdateAssets {
 
+    fun notificationIcon(): Int = R.drawable.notification_travel
+
     fun flagIconFor(displayName: String?): Int {
         return when (displayName?.trim()?.lowercase()) {
             "torn" -> R.drawable.action_torn
+            "abroad" -> R.drawable.action_travel
+            "hospital" -> R.drawable.hospital
             "argentina" -> R.drawable.flag_argentina
             "canada" -> R.drawable.flag_canada
             "cayman islands", "cayman", "cayman island" -> R.drawable.flag_cayman
@@ -18,14 +22,9 @@ object TravelLiveUpdateAssets {
             "switzerland" -> R.drawable.flag_switzerland
             "uae", "united arab emirates" -> R.drawable.flag_uae
             "united kingdom", "uk" -> R.drawable.flag_uk
-            else -> R.drawable.plane_right
+            else -> R.drawable.action_travel
         }
     }
 
-    fun trackerIconFor(destinationDisplayName: String?): Int {
-        return when (destinationDisplayName?.trim()?.lowercase()) {
-            "torn" -> R.drawable.plane_left
-            else -> R.drawable.plane_right
-        }
-    }
+    fun trackerIconFor(): Int = R.drawable.plane_right
 }
