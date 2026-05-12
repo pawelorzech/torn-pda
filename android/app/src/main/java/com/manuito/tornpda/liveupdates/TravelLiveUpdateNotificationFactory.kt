@@ -314,8 +314,8 @@ class TravelLiveUpdateNotificationFactory(
 
         val total = progress.totalSeconds.toInt().coerceAtLeast(1)
         val elapsed = progress.elapsedSeconds.toInt().coerceIn(0, total)
-        val originIcon = TravelLiveUpdateAssets.flagIconFor(payload.originDisplayName)
-        val destinationIcon = TravelLiveUpdateAssets.flagIconFor(payload.currentDestinationDisplayName)
+        val originIcon = TravelLiveUpdateAssets.endpointIconFor(payload.originDisplayName)
+        val destinationIcon = TravelLiveUpdateAssets.endpointIconFor(payload.currentDestinationDisplayName)
         val trackerIcon = TravelLiveUpdateAssets.trackerIconFor()
 
         return try {

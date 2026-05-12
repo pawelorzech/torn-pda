@@ -6,7 +6,7 @@ object TravelLiveUpdateAssets {
 
     fun notificationIcon(): Int = R.drawable.notification_travel
 
-    fun flagIconFor(displayName: String?): Int {
+    fun endpointIconFor(displayName: String?): Int {
         return when (displayName?.trim()?.lowercase()) {
             "torn" -> R.drawable.action_torn
             "abroad" -> R.drawable.action_travel
