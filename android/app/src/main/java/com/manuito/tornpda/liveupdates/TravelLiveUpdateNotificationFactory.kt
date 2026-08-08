@@ -65,13 +65,13 @@ class TravelLiveUpdateNotificationFactory(
         dismissIntent: android.app.PendingIntent,
     ): Notification {
         val hasActuallyArrived = contentBuilder.hasActuallyArrived(payload)
-        val destinationIcon = TravelLiveUpdateAssets.trackerIconFor(payload.currentDestinationDisplayName)
+        val smallIcon = TravelLiveUpdateAssets.smallIconFor(payload.currentDestinationDisplayName)
         val remainingText = formatRemaining(payload)
         val earliestReturnText = formatEarliestReturn(payload)
         val arrivalClockTime = formatArrivalClockTime(payload)
 
         val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(destinationIcon)
+            .setSmallIcon(smallIcon)
             .setContentIntent(tapIntent)
             .setDeleteIntent(dismissIntent)
             .setOnlyAlertOnce(true)
@@ -90,6 +90,7 @@ class TravelLiveUpdateNotificationFactory(
             builder.setContentTitle(arrivedTitle)
             builder.setContentText(arrivedContentText)
             builder.setSubText(secondary)
+            arrivalBadge(payload)?.let { builder.setLargeIcon(it) }
             builder.setStyle(
                 NotificationCompat.BigTextStyle().bigText(
                     buildList {
@@ -152,13 +153,13 @@ class TravelLiveUpdateNotificationFactory(
         dismissIntent: android.app.PendingIntent,
     ): Notification {
         val hasActuallyArrived = contentBuilder.hasActuallyArrived(payload)
-        val destinationIcon = TravelLiveUpdateAssets.trackerIconFor(payload.currentDestinationDisplayName)
+        val smallIcon = TravelLiveUpdateAssets.smallIconFor(payload.currentDestinationDisplayName)
         val remainingText = formatRemaining(payload)
         val earliestReturnText = formatEarliestReturn(payload)
         val arrivalClockTime = formatArrivalClockTime(payload)
 
         val builder = Notification.Builder(context, channelId)
-            .setSmallIcon(destinationIcon)
+            .setSmallIcon(smallIcon)
             .setContentIntent(tapIntent)
             .setDeleteIntent(dismissIntent)
             .setOnlyAlertOnce(true)
@@ -177,6 +178,12 @@ class TravelLiveUpdateNotificationFactory(
             builder.setContentTitle(arrivedTitle)
             builder.setContentText(arrivedContentText)
             builder.setSubText(secondary)
+            builder.setLargeIcon(
+                Icon.createWithResource(
+                    context,
+                    TravelLiveUpdateAssets.endpointIconFor(payload.currentDestinationDisplayName),
+                ),
+            )
             builder.setStyle(
                 Notification.BigTextStyle().bigText(
                     buildList {
@@ -233,6 +240,17 @@ class TravelLiveUpdateNotificationFactory(
         val notification = builder.build()
         warnIfNotPromotable(notification)
         return notification
+    }
+
+    // NotificationCompat below API 23 only accepts a Bitmap large icon, so decode rather than Icon.
+    private fun arrivalBadge(payload: LiveUpdatePayload): android.graphics.Bitmap? {
+        val resId = TravelLiveUpdateAssets.endpointIconFor(payload.currentDestinationDisplayName)
+        return try {
+            android.graphics.BitmapFactory.decodeResource(context.resources, resId)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Could not decode arrival badge", t)
+            null
+        }
     }
 
     private fun formatEta(payload: LiveUpdatePayload): String {
@@ -314,9 +332,9 @@ class TravelLiveUpdateNotificationFactory(
 
         val total = progress.totalSeconds.toInt().coerceAtLeast(1)
         val elapsed = progress.elapsedSeconds.toInt().coerceIn(0, total)
-        val originIcon = TravelLiveUpdateAssets.flagIconFor(payload.originDisplayName)
-        val destinationIcon = TravelLiveUpdateAssets.flagIconFor(payload.currentDestinationDisplayName)
-        val trackerIcon = TravelLiveUpdateAssets.trackerIconFor(payload.currentDestinationDisplayName)
+        val originIcon = TravelLiveUpdateAssets.endpointIconFor(payload.originDisplayName)
+        val destinationIcon = TravelLiveUpdateAssets.endpointIconFor(payload.currentDestinationDisplayName)
+        val trackerIcon = TravelLiveUpdateAssets.trackerIcon()
 
         return try {
             val style = refs.styleCtor.newInstance()

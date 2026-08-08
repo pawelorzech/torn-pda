@@ -578,6 +578,8 @@ class Prefs {
   // Android-only: used to avoid repeating "Arrived" Live Update after app relaunch
   final String _kAndroidLiveActivityTravelLastArrivalId = "pda_androidLiveActivityTravelLastArrivalId";
   final String _kLiveActivityCurrentTripBackup = "pda_liveActivityCurrentTripBackup";
+  // Last foreign country the player was in, so the return leg can name its origin
+  final String _kLiveActivityLastForeignCountry = "pda_liveActivityLastForeignCountry";
 
   /// ----------------------------
   /// Methods for app version
@@ -4669,6 +4671,17 @@ class Prefs {
   /// Android-only: persisted to avoid duplicating the last "Arrived" Live Update after relaunch
   Future setAndroidLiveActivityTravelLastArrivalId(String travelId) async {
     return await PrefsDatabase.setString(_kAndroidLiveActivityTravelLastArrivalId, travelId);
+  }
+
+  /// Last foreign country the player was in. The Torn API's travel object only
+  /// exposes the destination, so the return leg has no origin to show without this.
+  Future<String?> getLiveActivityLastForeignCountry() async {
+    final String value = await PrefsDatabase.getString(_kLiveActivityLastForeignCountry, "");
+    return value.isEmpty ? null : value;
+  }
+
+  Future setLiveActivityLastForeignCountry(String country) async {
+    return await PrefsDatabase.setString(_kLiveActivityLastForeignCountry, country);
   }
 
   Future<String?> getLiveActivityCurrentTripBackup() async {

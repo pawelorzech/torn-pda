@@ -39,6 +39,40 @@ class LiveActivityTravelController extends GetxController {
   static const String _backupTaskUniqueName = "com.tornpda.liveactivity.arrival_backup";
   String? _activeSessionId;
 
+  /// Torn's travel payload only names the destination, so the return leg would
+  /// otherwise have no origin to render. Kept in sync with prefs.
+  String? _lastForeignCountry;
+
+  static const List<String> _knownCountries = [
+    "Argentina",
+    "Canada",
+    "Cayman Islands",
+    "China",
+    "Hawaii",
+    "Japan",
+    "Mexico",
+    "South Africa",
+    "Switzerland",
+    "United Arab Emirates",
+    "United Kingdom",
+  ];
+
+  /// Pulls a known country out of a Torn status line such as
+  /// "Returning to Torn from Cayman Islands". Returns null when none matches.
+  @visibleForTesting
+  static String? parseCountryFromStatusDescription(String? description) {
+    if (description == null || description.isEmpty) return null;
+    final lowered = description.toLowerCase();
+    String? best;
+    for (final country in _knownCountries) {
+      if (lowered.contains(country.toLowerCase())) {
+        // Longest match wins so "United Arab Emirates" beats a shorter substring
+        if (best == null || country.length > best.length) best = country;
+      }
+    }
+    return best;
+  }
+
   @visibleForTesting
   static ({int arrivalTimestamp, int departureTimestamp}) computeDeviceRelativeTimestamps({
     required int serverArrivalTimestamp,
@@ -93,6 +127,8 @@ class LiveActivityTravelController extends GetxController {
         _lastArrivalNotifiedTravelId = storedArrivalId;
       }
     }
+
+    _lastForeignCountry = await _prefs.getLiveActivityLastForeignCountry();
 
     // Sync LA State
     _isLALogicallyActive = await _bridgeController.isAnyActivityActive();
@@ -157,6 +193,7 @@ class LiveActivityTravelController extends GetxController {
           'arrivalTimestamp': travel.timestamp!,
           'departureTimestamp': travel.departed!,
           'timeLeft': travel.timeLeft,
+          'statusDescription': model.status?.description,
         };
       }
     }
@@ -384,14 +421,18 @@ class LiveActivityTravelController extends GetxController {
     } else {
       final String destination = apiTravelData['destination']!;
       if (destination == "Torn") {
+        final String? originCountry =
+            parseCountryFromStatusDescription(apiTravelData['statusDescription'] as String?) ?? _lastForeignCountry;
         currentDestinationDisplayName = "Torn";
         currentDestinationFlagAsset = "ball_torn";
-        originDisplayName = "Abroad";
-        originFlagAsset = "world_origin_icon";
+        originDisplayName = originCountry ?? "Abroad";
+        originFlagAsset =
+            originCountry != null ? "ball_${_normalizeCountryNameForAsset(originCountry)}" : "world_origin_icon";
         vehicleAssetName = isChristmasTimeValue ? "sleigh" : "plane_left";
         activityStateTitle = hasArrived ? "Returned to" : "Returning to";
         destinationEmoji = "\u{1F3E0}"; // Home emoji for Torn
       } else {
+        _rememberForeignCountry(destination);
         currentDestinationDisplayName = destination;
         currentDestinationFlagAsset = "ball_${_normalizeCountryNameForAsset(destination)}";
         originDisplayName = "Torn";
@@ -463,6 +504,12 @@ class LiveActivityTravelController extends GetxController {
       'United Arab Emirates': '\u{1F1E6}\u{1F1EA}', // 🇦🇪
     };
     return countryEmojis[countryName] ?? '\u{1F30D}'; // Default to globe emoji
+  }
+
+  void _rememberForeignCountry(String country) {
+    if (_lastForeignCountry == country) return;
+    _lastForeignCountry = country;
+    _prefs.setLiveActivityLastForeignCountry(country);
   }
 
   bool _isChristmas() {
